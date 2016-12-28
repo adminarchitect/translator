@@ -17,7 +17,7 @@
         }
     ],
     "require": {
-        "terranet/administrator": "^3.1"
+        "terranet/administrator": "dev-master"
     },
     "autoload": {
         "psr-4": {
