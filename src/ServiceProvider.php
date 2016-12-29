@@ -2,78 +2,72 @@
 
 namespace Terranet\Translator;
 
-use Illuminate\Support\ServiceProvider as BaseServiceProvider;
-use Terranet\Translator\Console\TranslatorTableCommand;
+use Illuminate\Translation\FileLoader;
+use Illuminate\Translation\TranslationServiceProvider;
+use Terranet\Translator\Console\TranslatorMigrationCommand;
+use Terranet\Translator\Console\TranslatorSetupCommand;
+use Terranet\Translator\Console\TranslatorTranslationModelCommand;
+use Terranet\Translator\Console\TranslatorTranslationModuleCommand;
 
-class ServiceProvider extends BaseServiceProvider
+class ServiceProvider extends TranslationServiceProvider
 {
-    public function boot()
-    {
-        if (! defined('_TERRANET_TRANSLATOR_')) {
-            define('_TERRANET_TRANSLATOR_', 1);
-        }
-
-        $this->checkDependencies();
-
-        $baseDir = realpath(__DIR__ . '/..');
-
-        /*
-         * Publish & Load configuration
-         */
-//        $this->publishes(["{$baseDir}/publishes/config.php" => config_path('translator.php')], 'config');
-//        $this->mergeConfigFrom("{$baseDir}/publishes/config.php", 'translator');
-
-        /*
-         * Publish & Load views, assets
-         */
-//        $this->publishes(["{$baseDir}/publishes/views" => base_path('resources/views/vendor/translator')], 'views');
-        $this->loadViewsFrom("{$baseDir}/publishes/views", 'translator');
-
-        /*
-         * Publish & Load translations
-         */
-//        $this->publishes(
-//            ["{$baseDir}/publishes/lang" => base_path('resources/lang/vendor/translator')],
-//            'translator'
-//        );
-        $this->loadTranslationsFrom("{$baseDir}/publishes/lang", 'translator');
-
-        $this->publishes(
-            [
-                "{$baseDir}/publishes/Models" => app_path(),
-                "{$baseDir}/publishes/Modules" => app_path(app('scaffold.config')->get('paths.module')),
-            ],
-            'translator'
-        );
-    }
+    protected $commands = [
+        'Migration' => 'command.translator.migration',
+        'MakeTranslationModel' => 'command.translator.make-translation-model',
+        'MakeTranslationModule' => 'command.translator.make-translation-module',
+        'Setup' => 'command.translator.setup',
+    ];
 
     public function register()
     {
-        $this->app->singleton('command.translator.table', function ($app) {
-            return new TranslatorTableCommand($app['files'], $app['composer']);
-        });
+        $this->registerCommands();
 
-        $this->app->singleton('command.translator.load', function ($app) {
-            return new TranslatorLoadCommand($app['files'], $app['composer']);
-        });
-
-        $this->commands(['command.translator.table']);
+        parent::register();
     }
 
-    /**
-     * @return bool
-     * @throws \Exception
-     */
-    protected function checkDependencies()
+    protected function registerCommands()
     {
-        $mandatory = [
-            'terranet/localizer' => \Terranet\Localizer\ServiceProvider::class,
-        ];
+        foreach (array_keys($this->commands) as $command) {
+            $method = "register{$command}Command";
 
-        foreach ($mandatory as $package => $provider) {
-            if (!array_has(app()->getLoadedProviders(), $provider)) {
-                throw new \Exception("Mandatory package `{$package}` is missing.");
-            }
+            call_user_func_array([$this, $method], []);
         }
+
+        $this->commands(array_values($this->commands));
+    }
+
+    protected function registerMigrationCommand()
+    {
+        $this->app->singleton('command.translator.migration', function ($app) {
+            return new TranslatorMigrationCommand($app['files'], $app['composer']);
+        });
+    }
+
+    protected function registerMakeTranslationModelCommand()
+    {
+        $this->app->singleton('command.translator.make-translation-model', function ($app) {
+            return new TranslatorTranslationModelCommand($app['files']);
+        });
+    }
+
+    protected function registerMakeTranslationModuleCommand()
+    {
+        $this->app->singleton('command.translator.make-translation-module', function ($app) {
+            return new TranslatorTranslationModuleCommand($app['files']);
+        });
+    }
+
+    protected function registerSetupCommand()
+    {
+        $this->app->singleton('command.translator.setup', function () {
+            return new TranslatorSetupCommand();
+        });
+    }
+
+    protected function registerLoader()
+    {
+        $this->app->singleton('translation.loader', function ($app) {
+            return new FileLoader($app['files'], $app['path.lang']);
+        });
     }
 }

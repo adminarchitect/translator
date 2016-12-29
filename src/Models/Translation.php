@@ -6,5 +6,10 @@ use Illuminate\Database\Eloquent\Model;
 
 class Translation extends Model
 {
-    protected $fillable = ['locale', 'group', 'name', 'value', 'viewed_at'];
+    protected $fillable = ['locale', 'key', 'value'];
+
+    public function locales()
+    {
+        return $this->hasMany(static::class, 'key', 'key');
+    }
 }

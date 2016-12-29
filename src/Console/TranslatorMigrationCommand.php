@@ -6,21 +6,21 @@ use Illuminate\Console\Command;
 use Illuminate\Support\Composer;
 use Illuminate\Filesystem\Filesystem;
 
-class TranslatorTableCommand extends Command
+class TranslatorMigrationCommand extends Command
 {
     /**
      * The console command name.
      *
      * @var string
      */
-    protected $name = 'translator:table';
+    protected $name = 'translator:migration';
 
     /**
      * The console command description.
      *
      * @var string
      */
-    protected $description = 'Create a translations table.';
+    protected $description = 'Create translator migration.';
 
     /**
      * The filesystem instance.
@@ -56,7 +56,7 @@ class TranslatorTableCommand extends Command
     {
         $fullPath = $this->createBaseMigration();
 
-        $this->files->put($fullPath, $this->files->get(__DIR__.'/stubs/table.stub'));
+        $this->files->put($fullPath, $this->files->get(__DIR__.'/stubs/migration.stub'));
 
         $this->info('Migration created successfully!');
 

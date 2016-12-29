@@ -8,7 +8,6 @@ use Terranet\Administrator\Contracts\Module\Filtrable;
 use Terranet\Administrator\Contracts\Module\Navigable;
 use Terranet\Administrator\Contracts\Module\Sortable;
 use Terranet\Administrator\Contracts\Module\Validable;
-use Terranet\Administrator\Filters\Scope;
 use Terranet\Administrator\Scaffolding;
 use Terranet\Administrator\Traits\Module\AllowFormats;
 use Terranet\Administrator\Traits\Module\AllowsNavigation;
@@ -68,9 +67,8 @@ class Translations extends Scaffolding implements Navigable, Filtrable, Editable
 
     public function columns()
     {
-        return $this
-            ->scaffoldColumns()
-            ->without(['locale', 'viewed_at']);
+        return $this->scaffoldColumns()
+            ->without(['id', 'locale']);
     }
 
     public function filters()
@@ -80,30 +78,14 @@ class Translations extends Scaffolding implements Navigable, Filtrable, Editable
             ->without(['locale']);
     }
 
-    public function scopes()
+    public function activeLocales()
     {
-        # generate Scopes for each locale.
-        $scopes = $this->scaffoldScopes();
+        $locale = app('translator')->getLocale();
 
-        foreach ($this->activeLocales() as $locale) {
-            $scopes->push(
-                (new Scope($locale->iso6391()))
-                    ->setTitle($locale->title())
-                    ->setQuery(function ($query) use ($locale) {
-                        return $query->where('locale', $locale->iso6391());
-                    })
-            );
-        }
-
-        return $scopes;
-    }
-
-
-    /**
-     * @return array
-     */
-    protected function activeLocales()
-    {
-        return \localizer\locales();
+        return [
+            $locale => $locale,
+            'ru' => 'ru',
+            'en' => 'en',
+        ];
     }
 }
