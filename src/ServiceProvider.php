@@ -2,12 +2,16 @@
 
 namespace Terranet\Translator;
 
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Translation\FileLoader;
 use Illuminate\Translation\TranslationServiceProvider;
 use Terranet\Translator\Console\TranslatorMigrationCommand;
 use Terranet\Translator\Console\TranslatorSetupCommand;
+use Terranet\Translator\Console\TranslatorTranslationActionCommand;
+use Terranet\Translator\Console\TranslatorTranslationFinderCommand;
 use Terranet\Translator\Console\TranslatorTranslationModelCommand;
 use Terranet\Translator\Console\TranslatorTranslationModuleCommand;
+use Terranet\Translator\Console\TranslatorTranslationTemplateCommand;
 
 class ServiceProvider extends TranslationServiceProvider
 {
@@ -15,14 +19,37 @@ class ServiceProvider extends TranslationServiceProvider
         'Migration' => 'command.translator.migration',
         'MakeTranslationModel' => 'command.translator.make-translation-model',
         'MakeTranslationModule' => 'command.translator.make-translation-module',
+        'MakeTranslationAction' => 'command.translator.make-translation-action',
+        'MakeTranslationFinder' => 'command.translator.make-translation-finder',
+        'MakeTranslationTemplate' => 'command.translator.make-translation-template',
         'Setup' => 'command.translator.setup',
     ];
 
     public function register()
     {
+        $this->mergeConfigFrom(__DIR__ . '/../config/translator.php', 'translator');
+
         $this->registerCommands();
 
-        parent::register();
+        $this->registerLoader();
+
+        $this->app->singleton('translator', function ($app) {
+            $fallbackLoader = $app['translation.loader_fallback'];
+
+            $locale = $app['config']['app.locale'];
+
+            $fallbackTranslator = new Translator($fallbackLoader, $locale);
+
+            $fallbackTranslator->setFallback($app['config']['app.fallback_locale']);
+
+            $loader = $app['translation.loader'];
+
+            $translator = new Translator($loader, $locale, $fallbackTranslator);
+
+            $translator->setFallback($app['config']['app.fallback_locale']);
+
+            return $translator;
+        });
     }
 
     protected function registerCommands()
@@ -57,6 +84,27 @@ class ServiceProvider extends TranslationServiceProvider
         });
     }
 
+    protected function registerMakeTranslationActionCommand()
+    {
+        $this->app->singleton('command.translator.make-translation-action', function ($app) {
+            return new TranslatorTranslationActionCommand($app['files']);
+        });
+    }
+
+    protected function registerMakeTranslationFinderCommand()
+    {
+        $this->app->singleton('command.translator.make-translation-finder', function ($app) {
+            return new TranslatorTranslationFinderCommand($app['files']);
+        });
+    }
+
+    protected function registerMakeTranslationTemplateCommand()
+    {
+        $this->app->singleton('command.translator.make-translation-template', function ($app) {
+            return new TranslatorTranslationTemplateCommand($app['files']);
+        });
+    }
+
     protected function registerSetupCommand()
     {
         $this->app->singleton('command.translator.setup', function () {
@@ -67,7 +115,42 @@ class ServiceProvider extends TranslationServiceProvider
     protected function registerLoader()
     {
         $this->app->singleton('translation.loader', function ($app) {
+            $model = config('translator.model');
+
+            return new DbLoader(new $model, $app['cache']);
+        });
+
+        $this->app->singleton('translation.loader_fallback', function ($app) {
             return new FileLoader($app['files'], $app['path.lang']);
+        });
+    }
+
+    public function boot()
+    {
+        $this->loadViewsFrom(__DIR__ . '/../views', 'translator');
+
+        $this->publishes([
+            __DIR__ . '/../views' => resource_path('views/vendor/translator'),
+        ]);
+
+        $this->publishes([
+            __DIR__.'/../config/translator.php' => config_path('translator.php'),
+        ]);
+
+        $model = config('translator.model');
+
+        $model::saved(function(Model $row) {
+            if ($row['value'] != $row->getOriginal('value')) {
+                /** @var DbLoader $loader */
+                $loader = $this->app['translation.loader'];
+
+                /** @var Translator $translator */
+                $translator = $this->app['translator'];
+
+                list($namespace, $group) = $translator->parseKey($row['key']);
+
+                $loader->clearCache($row['locale'], $namespace, $group);
+            }
         });
     }
 }

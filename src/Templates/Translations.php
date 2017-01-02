@@ -20,6 +20,6 @@ class Translations extends Template implements TemplateProvider
 
     protected function customPartial($partial)
     {
-        return 'administrator.translations.' . $partial;
+        return 'translator::' . $partial;
     }
 }

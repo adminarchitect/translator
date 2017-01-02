@@ -8,6 +8,7 @@ use Terranet\Administrator\Contracts\Module\Filtrable;
 use Terranet\Administrator\Contracts\Module\Navigable;
 use Terranet\Administrator\Contracts\Module\Sortable;
 use Terranet\Administrator\Contracts\Module\Validable;
+use Terranet\Administrator\Filters\FilterElement;
 use Terranet\Administrator\Scaffolding;
 use Terranet\Administrator\Traits\Module\AllowFormats;
 use Terranet\Administrator\Traits\Module\AllowsNavigation;
@@ -68,14 +69,25 @@ class Translations extends Scaffolding implements Navigable, Filtrable, Editable
     public function columns()
     {
         return $this->scaffoldColumns()
-            ->without(['id', 'locale']);
+            ->without(['locale']);
     }
 
     public function filters()
     {
+        $keyword = FilterElement::text('keyword');
+
+        $keyword->getInput()->setQuery(function ($query, $value) {
+            return $query->where(function($where) use ($value) {
+                return $where
+                    ->where('key', 'like', '%' . $value . '%')
+                    ->orWhere('value', 'like', '%' . $value . '%');
+            });
+        });
+
         return $this
             ->scaffoldFilters()
-            ->without(['locale']);
+            ->push($keyword)
+            ->without(['locale', 'key']);
     }
 
     public function activeLocales()
@@ -84,8 +96,6 @@ class Translations extends Scaffolding implements Navigable, Filtrable, Editable
 
         return [
             $locale => $locale,
-            'ru' => 'ru',
-            'en' => 'en',
         ];
     }
 }

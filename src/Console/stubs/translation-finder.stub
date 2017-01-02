@@ -1,0 +1,8 @@
+<?php
+
+namespace App\Http\Terranet\Administrator\Finders;
+
+class Translations extends \Terranet\Translator\Finders\Translations
+{
+    //
+}

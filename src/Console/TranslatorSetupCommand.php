@@ -12,7 +12,11 @@ class TranslatorSetupCommand extends Command
 
     protected $commands = [
         'translator:migration' => 'Creating migration',
-        'translator:make-translation' => 'Creating translation model',
+        'translator:make-translation-model' => 'Creating translation model',
+        'translator:make-translation-module' => 'Creating translation module',
+        'translator:make-translation-action' => 'Creating translation action',
+        'translator:make-translation-finder' => 'Creating translation finder',
+        'translator:make-translation-template' => 'Creating translation template',
     ];
 
     public function fire()

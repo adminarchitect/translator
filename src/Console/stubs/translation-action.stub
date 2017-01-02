@@ -1,0 +1,8 @@
+<?php
+
+namespace App\Http\Terranet\Administrator\Actions;
+
+class Translations extends \Terranet\Translator\Actions\Translations
+{
+    //
+}
