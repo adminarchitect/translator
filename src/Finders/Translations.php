@@ -19,6 +19,7 @@ class Translations extends Finder
             ->with(['locales' => function($query) {
                 $query->orderBy('locale');
             }])
+            ->orderBy('key')
         ;
 
         return $query->paginate($this->perPage());
