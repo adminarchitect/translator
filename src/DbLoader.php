@@ -3,26 +3,19 @@
 namespace Terranet\Translator;
 
 use Illuminate\Cache\CacheManager;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Translation\LoaderInterface;
-use Terranet\Translator\Models\Translation;
 
 class DbLoader implements LoaderInterface
 {
-    /**
-     * @var Translation
-     */
-    private $model = null;
-
     /**
      * @var CacheManager
      */
     private $cache = null;
 
-    public function __construct(Translation $model, CacheManager $cache)
+    public function __construct(CacheManager $cache)
     {
-        $this->model = $model;
-
         $this->cache = $cache;
     }
 
@@ -33,7 +26,7 @@ class DbLoader implements LoaderInterface
         if (!$this->cache->has('key')) {
             $translates = $this->loadFromDb($locale, $group, $namespace);
 
-            $this->cache->put($this->getCacheNamespace($locale, $prefix), $translates);
+            $this->cache->forever($this->getCacheNamespace($locale, $prefix), $translates);
 
             return $translates;
         }
@@ -45,7 +38,7 @@ class DbLoader implements LoaderInterface
     {
         $prefix = $this->getPrefix($group, $namespace);
 
-        $items = $this->model
+        $items = DB::table('translations')
             ->where('locale', $locale)
             ->where('key', 'like', str_replace('%', '%%', $prefix) . '%')
             ->pluck('value', 'key')
@@ -99,7 +92,7 @@ class DbLoader implements LoaderInterface
         $prefix = $this->getPrefix($group, $namespace);
 
         foreach ($lines as $key => $value) {
-            $this->model->create([
+            DB::table('translations')->insert([
                 'locale' => $locale,
                 'key' => $prefix . $key,
                 'value' => $value,

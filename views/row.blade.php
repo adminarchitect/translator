@@ -19,11 +19,13 @@
     </td>
 
     <td>
-        <div class="btn-group toggle-languages" data-toggle="btn-toggle" style="margin-bottom: 5px;">
-            @foreach($module->activeLocales() as $locale => $title)
-                <button type="button" class="btn btn-default btn-sm{{ $locale === app('translator')->getLocale() ? ' active' : '' }}" data-locale="{{ $locale }}">{{ $title }}</button>
-            @endforeach
-        </div>
+        @if(count($module->activeLocales()) > 1)
+            <div class="btn-group toggle-languages" data-toggle="btn-toggle" style="margin-bottom: 5px;">
+                @foreach($module->activeLocales() as $locale => $title)
+                    <button type="button" class="btn btn-default btn-sm{{ $locale === app('translator')->getLocale() ? ' active' : '' }}" data-locale="{{ $locale }}">{{ $title }}</button>
+                @endforeach
+            </div>
+        @endif
 
         <ul class="list-unstyled">
             @foreach($actions->actions()->authorized(auth('admin')->user(), $item) as $action)

@@ -115,9 +115,7 @@ class ServiceProvider extends TranslationServiceProvider
     protected function registerLoader()
     {
         $this->app->singleton('translation.loader', function ($app) {
-            $model = config('translator.model');
-
-            return new DbLoader(new $model, $app['cache']);
+            return new DbLoader($app['cache']);
         });
 
         $this->app->singleton('translation.loader_fallback', function ($app) {
@@ -137,20 +135,20 @@ class ServiceProvider extends TranslationServiceProvider
             __DIR__.'/../config/translator.php' => config_path('translator.php'),
         ]);
 
-        $model = config('translator.model');
+        if (class_exists($model = config('translator.model'))) {
+            $model::saved(function(Model $row) {
+                if ($row['value'] != $row->getOriginal('value')) {
+                    /** @var DbLoader $loader */
+                    $loader = $this->app['translation.loader'];
 
-        $model::saved(function(Model $row) {
-            if ($row['value'] != $row->getOriginal('value')) {
-                /** @var DbLoader $loader */
-                $loader = $this->app['translation.loader'];
+                    /** @var Translator $translator */
+                    $translator = $this->app['translator'];
 
-                /** @var Translator $translator */
-                $translator = $this->app['translator'];
+                    list($namespace, $group) = $translator->parseKey($row['key']);
 
-                list($namespace, $group) = $translator->parseKey($row['key']);
-
-                $loader->clearCache($row['locale'], $namespace, $group);
-            }
-        });
+                    $loader->clearCache($row['locale'], $namespace, $group);
+                }
+            });
+        }
     }
 }
