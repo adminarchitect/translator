@@ -31,7 +31,9 @@ class DbLoader implements LoaderInterface
             return $translates;
         }
 
-        return $this->cache->get($this->getCacheNamespace($locale, $prefix));
+        $translates = $this->cache->get($this->getCacheNamespace($locale, $prefix));
+
+        return $translates;
     }
 
     protected function loadFromDb($locale, $group, $namespace = null)
@@ -49,7 +51,13 @@ class DbLoader implements LoaderInterface
         $translates = [];
 
         foreach ($items as $key => $value) {
-            $translates[Str::substr($key, $prefixLength)] = $value;
+            $decoded = json_decode($value);
+
+            if (json_last_error() === JSON_ERROR_NONE) {
+                $translates[Str::substr($key, $prefixLength)] = $decoded;
+            } else {
+                $translates[Str::substr($key, $prefixLength)] = $value;
+            }
         }
 
         return $translates;
@@ -95,7 +103,7 @@ class DbLoader implements LoaderInterface
             DB::table('translations')->insert([
                 'locale' => $locale,
                 'key' => $prefix . $key,
-                'value' => $value,
+                'value' => is_array($value) ? json_encode($value) : $value,
             ]);
         }
 
