@@ -13,6 +13,21 @@ class Translations extends CrudActions
         return false;
     }
 
+    public function canUpdate()
+    {
+        return false;
+    }
+
+    public function canDelete()
+    {
+        return false;
+    }
+
+    public function canView()
+    {
+        return false;
+    }
+
     public function actions()
     {
         return [

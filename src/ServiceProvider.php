@@ -12,6 +12,7 @@ use Terranet\Translator\Console\TranslatorTranslationFinderCommand;
 use Terranet\Translator\Console\TranslatorTranslationModelCommand;
 use Terranet\Translator\Console\TranslatorTranslationModuleCommand;
 use Terranet\Translator\Console\TranslatorTranslationTemplateCommand;
+use Terranet\Translator\Observers\TranslationObserver;
 
 class ServiceProvider extends TranslationServiceProvider
 {
@@ -136,19 +137,7 @@ class ServiceProvider extends TranslationServiceProvider
         ]);
 
         if (class_exists($model = config('translator.model'))) {
-            $model::saved(function(Model $row) {
-                if ($row['value'] != $row->getOriginal('value')) {
-                    /** @var DbLoader $loader */
-                    $loader = $this->app['translation.loader'];
-
-                    /** @var Translator $translator */
-                    $translator = $this->app['translator'];
-
-                    list($namespace, $group) = $translator->parseKey($row['key']);
-
-                    $loader->clearCache($row['locale'], $namespace, $group);
-                }
-            });
+            $model::observe(TranslationObserver::class);
         }
     }
 }
