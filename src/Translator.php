@@ -20,6 +20,11 @@ class Translator extends \Illuminate\Translation\Translator implements Translato
         $this->fallbackTranslator = $fallbackTranslator;
     }
 
+    public function has($key, $locale = null, $fallback = true)
+    {
+        return parent::get($key, [], $locale, $fallback) !== $key;
+    }
+
     public function get($key, array $replace = [], $locale = null, $fallback = true)
     {
         list($namespace, $group, $item) = $this->parseKey($key);
@@ -46,7 +51,7 @@ class Translator extends \Illuminate\Translation\Translator implements Translato
         // from the application's language files. Otherwise we can return the line.
         if (! isset($line)) {
             if ($this->fallbackTranslator) {
-                $key = $this->fallbackTranslator->get($key, $replace, $locale, $fallback);
+                $key = $this->fallbackTranslator->get($key, $replace, $locales[0], $fallback);
             }
 
             $this->newLines[$locales[0]][$namespace][$group][$item] = $key;

@@ -2,7 +2,7 @@
 
 namespace Terranet\Translator;
 
-use Illuminate\Cache\CacheManager;
+use Illuminate\Contracts\Cache\Repository;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Translation\LoaderInterface;
@@ -10,11 +10,11 @@ use Illuminate\Translation\LoaderInterface;
 class DbLoader implements LoaderInterface
 {
     /**
-     * @var CacheManager
+     * @var Repository
      */
     private $cache = null;
 
-    public function __construct(CacheManager $cache)
+    public function __construct(Repository $cache)
     {
         $this->cache = $cache;
     }
@@ -23,15 +23,17 @@ class DbLoader implements LoaderInterface
     {
         $prefix = $this->getPrefix($group, $namespace);
 
-        if (!$this->cache->has('key')) {
+        $cacheNamespace = $this->getCacheNamespace($locale, $prefix);
+
+        if (!$this->cache->has($cacheNamespace)) {
             $translates = $this->loadFromDb($locale, $group, $namespace);
 
-            $this->cache->forever($this->getCacheNamespace($locale, $prefix), $translates);
+            $this->cache->forever($cacheNamespace, $translates);
 
             return $translates;
         }
 
-        $translates = $this->cache->get($this->getCacheNamespace($locale, $prefix));
+        $translates = $this->cache->get($cacheNamespace);
 
         return $translates;
     }
@@ -107,14 +109,14 @@ class DbLoader implements LoaderInterface
             ]);
         }
 
-        $this->clearCache($locale, $namespace, $group);
+        $this->cache->forget($this->getCacheNamespace($locale, $prefix));
 
         return $this;
     }
 
-    public function clearCache($locale, $namespace, $group)
+    public function flush()
     {
-        $this->cache->forget($this->getCacheNamespace($locale, $this->getPrefix($group, $namespace)));
+        $this->cache->getStore()->flush();
 
         return $this;
     }

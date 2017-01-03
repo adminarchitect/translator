@@ -23,3 +23,7 @@ public function activeLocales()
     ];
 }
 ```
+
+# Flush cache
+
+Run in console `php artisan translation:flush`

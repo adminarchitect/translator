@@ -5,6 +5,7 @@ namespace Terranet\Translator;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Translation\FileLoader;
 use Illuminate\Translation\TranslationServiceProvider;
+use Terranet\Translator\Console\TranslatorFlushCommand;
 use Terranet\Translator\Console\TranslatorMigrationCommand;
 use Terranet\Translator\Console\TranslatorSetupCommand;
 use Terranet\Translator\Console\TranslatorTranslationActionCommand;
@@ -24,6 +25,7 @@ class ServiceProvider extends TranslationServiceProvider
         'MakeTranslationFinder' => 'command.translator.make-translation-finder',
         'MakeTranslationTemplate' => 'command.translator.make-translation-template',
         'Setup' => 'command.translator.setup',
+        'Flush' => 'command.translator.flush',
     ];
 
     public function register()
@@ -113,10 +115,17 @@ class ServiceProvider extends TranslationServiceProvider
         });
     }
 
+    protected function registerFlushCommand()
+    {
+        $this->app->singleton('command.translator.flush', function () {
+            return new TranslatorFlushCommand();
+        });
+    }
+
     protected function registerLoader()
     {
         $this->app->singleton('translation.loader', function ($app) {
-            return new DbLoader($app['cache']);
+            return new DbLoader($app['cache']->store());
         });
 
         $this->app->singleton('translation.loader_fallback', function ($app) {
