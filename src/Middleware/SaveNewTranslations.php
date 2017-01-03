@@ -19,13 +19,11 @@ class SaveNewTranslations
     {
         $response = $next($request);
 
-        /** @var Translator $translator */
-        $translator = app('translator');
-
         /** @var DbLoader $loader */
         $loader = app('translation.loader');
-
-        $loader->save($translator->getNewLines());
+        if ($loader instanceof DbLoader) {
+            $loader->save(app('translator')->getNewLines());
+        }
 
         return $response;
     }
