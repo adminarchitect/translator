@@ -74,7 +74,6 @@ class DbLoader implements LoaderInterface
         }
 
         return $this;
-
     }
 
     public function saveNamespaces($locale, array $namespaces)
@@ -84,7 +83,6 @@ class DbLoader implements LoaderInterface
         }
 
         return $this;
-
     }
 
     public function saveGroups($locale, $namespace, array $groups)
@@ -94,7 +92,6 @@ class DbLoader implements LoaderInterface
         }
 
         return $this;
-
     }
 
     public function saveLines($locale, $namespace, $group, array $lines)
@@ -108,6 +105,15 @@ class DbLoader implements LoaderInterface
                 'value' => is_array($value) ? json_encode($value) : $value,
             ]);
         }
+
+        $this->cache->forget($this->getCacheNamespace($locale, $prefix));
+
+        return $this;
+    }
+
+    public function clearCache($locale, $namespace, $group)
+    {
+        $prefix = $this->getPrefix($group, $namespace);
 
         $this->cache->forget($this->getCacheNamespace($locale, $prefix));
 
