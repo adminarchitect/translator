@@ -53,7 +53,7 @@ class DbLoader implements LoaderInterface
         $translates = [];
 
         foreach ($items as $key => $value) {
-            $decoded = json_decode($value);
+            $decoded = json_decode($value, true);
 
             if (json_last_error() === JSON_ERROR_NONE) {
                 $translates[Str::substr($key, $prefixLength)] = $decoded;
