@@ -53,6 +53,8 @@ class DbLoader implements LoaderInterface
         $translates = [];
 
         foreach ($items as $key => $value) {
+            $translates[Str::substr($key, $prefixLength)] = $value;
+            /*
             $decoded = json_decode($value, true);
 
             if (json_last_error() === JSON_ERROR_NONE) {
@@ -60,7 +62,10 @@ class DbLoader implements LoaderInterface
             } else {
                 $translates[Str::substr($key, $prefixLength)] = $value;
             }
+            */
         }
+
+        $translates = static::unpackIndexes($translates);
 
         return $translates;
     }
@@ -98,11 +103,14 @@ class DbLoader implements LoaderInterface
     {
         $prefix = $this->getPrefix($group, $namespace);
 
+        $lines = static::packIndexes($lines);
+
         foreach ($lines as $key => $value) {
             DB::table('translations')->insert([
                 'locale' => $locale,
                 'key' => $prefix . $key,
-                'value' => is_array($value) ? json_encode($value) : $value,
+                'value' => $value,
+                //'value' => is_array($value) ? json_encode($value) : $value,
             ]);
         }
 
@@ -141,5 +149,88 @@ class DbLoader implements LoaderInterface
     protected function getCacheNamespace($locale, $prefix)
     {
         return 'translations:' . $locale . ':' . $prefix;
+    }
+
+    protected static function packIndexes(array &$array, $delimiter = '.')
+    {
+        $new = [];
+
+        foreach ($array as $key => &$value) {
+            if (is_array($value)) {
+                foreach (static::packIndexes($value) as $k => $v) {
+                    $new[$key . $delimiter . $k] = $v;
+                }
+            } else {
+                $new[$key] = $value;
+            }
+        }
+        unset($value);
+
+        return $new;
+    }
+
+    protected static function unpackIndexes(array &$array, $delimiter = '.')
+    {
+        $new = [];
+
+        foreach ($array as $index => &$value) {
+            $sub = static::unpackToIndexPath($new, $index, $delimiter);
+
+            $sub[0] = (array) $sub[0];
+
+            static::set($sub[0], $sub[1], $value);
+        }
+        unset($value);
+
+        return $new;
+    }
+
+    protected static function unpackToIndexPath(&$array, $index, $delimiter = '.')
+    {
+        $sub = &$array;
+
+        $indexes = explode($delimiter, $index);
+
+        $lastKey = array_pop($indexes);
+
+        foreach ($indexes as $k) {
+            if ($k === '') {
+                $sub = &$sub[];
+            } else {
+                if (is_array($sub) and static::has($sub, $k) and !is_array($sub[$k])) {
+                    $sub[$k] = [];
+                }
+
+                $sub = &$sub[$k];
+            }
+        }
+
+        return [&$sub, $lastKey];
+    }
+
+    protected static function set(array &$array, $key, $value)
+    {
+        if ($key === null or $key === '') {
+            $array[] = $value;
+        } else {
+            $array[$key] = $value;
+        }
+
+        return $array;
+    }
+
+    protected static function has(array &$array, $key)
+    {
+        if (is_array($key)) {
+            foreach (($keys = $key) as $k) {
+                if (!static::has($array, $k)) {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        return array_key_exists($key, $array);
     }
 }
