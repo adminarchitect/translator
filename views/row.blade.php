@@ -10,7 +10,7 @@
 
     <td class="text-right">{{ $item['key'] }}</td>
 
-    <td>
+    <td width="50%">
         <?php $locales = $item->locales->groupBy('locale');?>
 
         @foreach($module->activeLocales() as $locale => $title)

@@ -10,6 +10,16 @@ class DeleteTranslation
 {
     use Skeleton, ActionSkeleton;
 
+    public function name()
+    {
+        return trans('administrator::buttons.delete');
+    }
+
+    public function icon()
+    {
+        return 'fa fa-trash';
+    }
+
     /**
      * Update single entity.
      *
