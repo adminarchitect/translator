@@ -2,7 +2,6 @@
 
 namespace Terranet\Translator;
 
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Translation\FileLoader;
 use Illuminate\Translation\TranslationServiceProvider;
 use Terranet\Translator\Console\TranslatorFlushCommand;
@@ -44,6 +43,10 @@ class ServiceProvider extends TranslationServiceProvider
             $fallbackTranslator = new Translator($fallbackLoader, $locale);
 
             $fallbackTranslator->setFallback($app['config']['app.fallback_locale']);
+
+            if ('db' !== config('translator.driver')) {
+                return $fallbackTranslator;
+            }
 
             $loader = $app['translation.loader'];
 
