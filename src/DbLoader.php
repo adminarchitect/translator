@@ -106,12 +106,16 @@ class DbLoader implements LoaderInterface
         $lines = static::packIndexes($lines);
 
         foreach ($lines as $key => $value) {
-            DB::table('translations')->insert([
-                'locale' => $locale,
-                'key' => $prefix . $key,
-                'value' => $value,
-                //'value' => is_array($value) ? json_encode($value) : $value,
-            ]);
+            try {
+                DB::table('translations')->insert([
+                    'locale' => $locale,
+                    'key' => $prefix . $key,
+                    'value' => $value,
+                    //'value' => is_array($value) ? json_encode($value) : $value,
+                ]);
+            } catch (\Exception $e) {
+                //
+            }
         }
 
         $this->cache->forget($this->getCacheNamespace($locale, $prefix));
